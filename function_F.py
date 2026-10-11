@@ -1,4 +1,4 @@
-from utilities import permute, hex_to_binary, print_array, decimal_to_binary
+from utilities import permute, hex_to_binary, print_array, decimal_to_binary, xor
 from key_generator import key_generation
 
 EXPANSION_PERMUTATION = [
@@ -96,19 +96,25 @@ def function_F(bits_input, key_input):
     expanded_bits = permute(bits_input, EXPANSION_PERMUTATION)
     print("Bits after expansion: ")
     print_array(expanded_bits)
+
+    # After having the expasion form, it's applied the xor opperation for all the bits
+    xor_result = xor(expanded_bits, key_input)
+    print(f"expanded bits: {expanded_bits},key input {key_input}")
+    print(f"XOR result: {xor_result}")
     # Divide the bits on 8 packets of 6 bits
     bits_divided_on_8_packets = []
     temp_size = 0
     for _ in range (8):
-        temp_packet = expanded_bits[temp_size:temp_size+6]
+        temp_packet = xor_result[temp_size:temp_size+6]
         bits_divided_on_8_packets.append(temp_packet)
         temp_size += 6
     print(f"tam de los paquetes {len(bits_divided_on_8_packets)}")
-
+    print(f"Primer paquete: {bits_divided_on_8_packets[0]}")
+    
     # For each packet, obtain their S-box representation
     s_boxes_representations = ""
-    for round, element in enumerate(bits_divided_on_8_packets) :
-        print(f"Packet {round}:")
+    for sbox_number, element in enumerate(bits_divided_on_8_packets) :
+        print(f"Packet {sbox_number}:")
         print_array(element)
         # First extract the firts and last bit
         first_bit = element[0]
@@ -117,16 +123,13 @@ def function_F(bits_input, key_input):
         outer_bits = first_bit + last_bit
         
         # Then, obtain the inter bits
-        temp_inner_bits = element[1:-1]
-        inner_bits = b''
-        for inner_bit in temp_inner_bits:
-            inner_bits += inner_bit.encode()
+        inner_bits = ''.join(element[1:-1])
 
         # Look for it on it's s-box
         #S_BOXES[s_number][outer_bits][inner_bits]
         sbox_row = int(outer_bits, 2)
         sbox_column = int(inner_bits, 2)
-        representative_sbox_value = (S_BOXES[round]
+        representative_sbox_value = (S_BOXES[sbox_number]
                                      [sbox_row]
                                      [sbox_column])
         
@@ -139,13 +142,15 @@ def function_F(bits_input, key_input):
     # Apply the permutation
     print(s_boxes_representations)
     permutation = permute(s_boxes_representations, P)
-    print_array(permutation)
+    return permutation
 
 if __name__ == "__main__":
     test_key_input = '133457799BBCDFF1'
     test_input_bit = '13345779'
+    r0 = list("11110000101010101111000010101010")
     key_binary = hex_to_binary(test_key_input)
     input_binary = hex_to_binary(test_input_bit)
     keys = key_generation(key_binary)
-    function_F(input_binary, keys[0])
+    result = function_F(r0, keys[0])
+    print(result)
     pass

@@ -61,3 +61,15 @@ def permute(bits, table):
     for position in table:
         output.append(bits[position -1])
     return output
+
+def xor(bits1, bits2):
+    result_xor = []
+    # Check that bots bits have the same lenght
+    if len(bits1) != len(bits2):
+        print(f"len bits 1: {len(bits1)}")
+        print(f"len bits 2: {len(bits2)}")
+        raise ValueError ("The bits have different sizes")
+    for element in range(len(bits1)):
+        xor = int(bits1[element]) ^ int(bits2[element])
+        result_xor.append(str(xor))
+    return result_xor
