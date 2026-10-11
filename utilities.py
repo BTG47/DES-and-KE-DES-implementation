@@ -29,6 +29,18 @@ def hex_to_binary(hex_value, bit_length=None):
     decimal = hex_to_decimal(hex_value)
     return decimal_to_binary(decimal, bit_length)
 
+def binary_to_hex(binary):
+    if len(binary) % 4 != 0:
+        raise ValueError("The number of bits must be a multiple of 4")
+
+    hexadecimal = []
+    for index in range(0, len(binary), 4):
+        bits = binary[index:index + 4]
+        if any(bit not in ("0", "1") for bit in bits):
+            raise ValueError("The array must contain only strings with bits")
+        hexadecimal.append(format(int("".join(bits), 2), "X"))
+    return hexadecimal
+
 def transform_64_binary_into_matrix_8x8(original_binary):
     new_matrix = [[col for col in range(8)] for row in range (8)]
     column = 0
