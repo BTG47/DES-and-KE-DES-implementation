@@ -16,12 +16,18 @@ def print_array(array):
 def hex_to_decimal(hex):
     return int(hex, 16)
 
-def decimal_to_binary(dec):
-    return format(dec, '064b') # Has exactly 64 characters
+def decimal_to_binary(dec, bit_length=None):
+    if bit_length is None:
+        bit_length = max(1, dec.bit_length())
+    if dec < 0 or dec >= 2 ** bit_length:
+        raise ValueError(f"{dec} does not fit in {bit_length} bits")
+    return format(dec, f"0{bit_length}b")
 
-def hex_to_binary(hex):
-    decimal = hex_to_decimal(hex)
-    return decimal_to_binary(decimal)
+def hex_to_binary(hex_value, bit_length=None):
+    if bit_length is None:
+        bit_length = len(hex_value.removeprefix("0x")) * 4
+    decimal = hex_to_decimal(hex_value)
+    return decimal_to_binary(decimal, bit_length)
 
 def transform_64_binary_into_matrix_8x8(original_binary):
     new_matrix = [[col for col in range(8)] for row in range (8)]

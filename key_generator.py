@@ -37,13 +37,8 @@ SHIFT_SCHEDULE = [
 
 def key_round(c0, d0, round_number):
     # apply left_schedule
-    print(f"Round Number: {round_number}")
     c0 = left_shift_array(c0, round_number)
     d0 = left_shift_array(d0, round_number)
-    print(f"c{round_number}:")
-    print_array(c0)
-    print(f"d{round_number}:")
-    print_array(d0)
 
     combined = c0 + d0
 
@@ -53,6 +48,7 @@ def key_round(c0, d0, round_number):
 def key_generation(original_key):
     # Applay transformation PC_1
     # Input: 64 bits, Output: 56 bits
+    print(original_key)
     pc_1 = permute(original_key, PC_1)
 
     # DEBUG:
@@ -75,6 +71,9 @@ def key_generation(original_key):
         round_result, c0, d0 = key_round(c0, d0, round)
         keys.append(round_result)
 
+    assert len(keys) == 16
+    assert all(len(key) == 48 for key in keys)
+
     return keys
 
 if __name__ == "__main__":
@@ -90,3 +89,10 @@ if __name__ == "__main__":
     keys = key_generation(binary_form)
     print("First key:")
     print_array(keys[0])
+
+    print("Total keys:", len(keys))
+    print("K1:")
+    print_array(keys[0])
+
+    print("K16:")
+    print_array(keys[15])
