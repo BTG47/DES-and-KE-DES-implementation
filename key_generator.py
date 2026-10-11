@@ -3,95 +3,90 @@ from utilities import (transform_64_binary_into_matrix_8x8,
                        print_matrix,
                        print_array, 
                        transform_matrix_into_array, 
-                       left_shift_array)
+                       left_shift_array,
+                       permute)
 
+PC_1 = [
+    57, 49, 41, 33, 25, 17, 9,
+    1, 58, 50, 42, 34, 26, 18,
+    10, 2, 59, 51, 43, 35, 27,
+    19, 11, 3, 60, 52, 44, 36,
+    63, 55, 47, 39, 31, 23, 15,
+    7, 62, 54, 46, 38, 30, 22,
+    14, 6, 61, 53, 45, 37, 29,
+    21, 13, 5, 28, 20, 12, 4
+]
 
-def shift_values(matrix, value):
-    pass
+PC_2 = [
+    14, 17, 11, 24, 1, 5,
+    3, 28, 15, 6, 21, 10,
+    23, 19, 12, 4, 26, 8,
+    16, 7, 27, 20, 13, 2,
+    41, 52, 31, 37, 47, 55,
+    30, 40, 51, 45, 33, 48,
+    44, 49, 39, 56, 34, 53,
+    46, 42, 50, 36, 29, 32
+]
 
-def next_row_column_original(row_original, column_original, isLeftProcedure):
-    next_row_original = (row_original -1) % 8 
+SHIFT_SCHEDULE = [
+    1, 1, 2, 2,
+    2, 2, 2, 2,
+    1, 2, 2, 2,
+    2, 2, 2, 1
+]
 
-    if next_row_original== 7: # It ended a cycle on row
-        if isLeftProcedure == True:
-            next_column_orignal = column_original + 1
-        else:
-            next_column_orignal = column_original - 1
-    else:
-        next_column_orignal = column_original
-    return next_row_original, next_column_orignal
+def key_round(c0, d0, round_number):
+    # apply left_schedule
+    print(f"Round Number: {round_number}")
+    c0 = left_shift_array(c0, round_number)
+    d0 = left_shift_array(d0, round_number)
+    print(f"c{round_number}:")
+    print_array(c0)
+    print(f"d{round_number}:")
+    print_array(d0)
 
-def next_row_column_output(row_output, column_original):
-    next_row_output = row_output
-    next_column_output = (column_original + 1) % 7
-    if next_column_output == 0:
-        next_row_output = row_output + 1
-    return next_row_output, next_column_output
+    combined = c0 + d0
 
-def pc_1_key(original_matrix):
-    # Input: 64 bits matrix
-    # Output: 56 bis matrix
-    output_matrix = [[column for column in range(7)] for row in range(8)]
+    pc2_permutation = permute(combined, PC_2)
+    return pc2_permutation, c0, d0
 
-    # First, the four movements of the left
-    left_original_row = len(original_matrix) -1
-    left_original_column = 0
-    output_row = 0
-    output_column = 0
-    for premutation_step in range(4):
-        for move in range(7):
-            original_left_value = original_matrix[left_original_column][left_original_row]
-            output_matrix[output_row][output_column] = original_left_value
-            # Obtain the next moves for traverse the original matrix:
-            left_original_row, left_original_column = next_row_column_original(left_original_row, 
-                                                                               left_original_column, 
-                                                                               True)
-            # Obtain the next moves for traverse the output matrix:
-            output_row, output_column = next_row_column_output(output_row, output_column)
+def key_generation(original_key):
+    # Applay transformation PC_1
+    # Input: 64 bits, Output: 56 bits
+    pc_1 = permute(original_key, PC_1)
 
-    # Now, do the same four movements but from the right
-    right_original_row = len(original_matrix) -1
-    right_original_column = len(original_matrix[0]) -1
+    # DEBUG:
+    print("The PC1 transmutation: ")
+    print_array(pc_1)
 
-    for premutation_step in range(4):
-        for move in range(7):
-            original_right_value = original_matrix[right_original_column][right_original_row]
-            output_matrix[output_row][output_column] = original_right_value
-            # Obtain the next moves for traverse the original matrix:
-            right_original_row, right_original_column = next_row_column_original(right_original_row, 
-                                                                                   right_original_column, 
-                                                                                   False)
-            # Obtain the next moves for traverse the output matrix:
-            output_row, output_column = next_row_column_output(output_row, output_column)
-    return output_matrix
+    # Divide each in half
+    c0 = pc_1[:28] 
+    d0 = pc_1[28:]
 
-def division_c_d(matrix):
-    copy_matrix = matrix.copy()
-    return copy_matrix[:][:4], copy_matrix[:][4:]  
+    print("C0: ")
+    print_array(c0)
+
+    print("D0: ")
+    print_array(d0)
+
+    #Obtain for each round, its key
+    keys = []
+    for round in SHIFT_SCHEDULE:
+        round_result, c0, d0 = key_round(c0, d0, round)
+        keys.append(round_result)
+
+    return keys
 
 if __name__ == "__main__":
+    # Obtain the main data:
     test_key_input = '133457799BBCDFF1'
     binary_form = hex_to_binary(test_key_input)
     print(f"Binary: {binary_form}")
     original_key_matrix = transform_64_binary_into_matrix_8x8(binary_form)
     print("Original key matrix")
     print_matrix(original_key_matrix, "Original Key Matrix")
-    pc_1_key_matrix = pc_1_key(original_key_matrix)
-    print_matrix(pc_1_key_matrix, "PC 1 key matrix")
-    c0, d0 = division_c_d(pc_1_key_matrix)
-    print_matrix(c0, "C0")
-    print_matrix(d0, "D0")
-    # For applying the left_shift rotation, it's changed back into an array
-    c0 = transform_matrix_into_array(c0)
-    d0 = transform_matrix_into_array(d0)
-    print("C0 and D0 arrays:")
-    print_array(c0)
-    print_array(d0)
-    # Apply shift
-    c0 = left_shift_array(c0, 1)
-    d0 = left_shift_array(d0, 1)
-    print("Shifted arrays: ")
-    print_array(c0)
-    print_array(d0)
 
-    pass
+    print("Doing key generation ....")
+    keys = key_generation(binary_form)
+    print("First key:")
+    print_array(keys[0])

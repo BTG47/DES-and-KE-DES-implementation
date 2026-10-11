@@ -7,6 +7,7 @@ def print_matrix(matrix, description):
         for value in row:
             print(value, end="")
         print("")
+
 def print_array(array):
     for element in array:
         print(element, end="")
@@ -43,7 +44,14 @@ def transform_matrix_into_array(matrix):
     return output_array
 
 def left_shift_array(array, num_of_times):
-    for _ in range (num_of_times):
-        temp = array.pop(0)
-        array.append(temp)
-    return array
+    return array[num_of_times:] + array[:num_of_times]
+
+
+def permute(bits, table):
+    output = []
+
+    # Take the already made tables for DES and reorganize the bits according to
+    # those positions
+    for position in table:
+        output.append(bits[position -1])
+    return output
