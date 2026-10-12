@@ -1,5 +1,4 @@
-from utilities import permute, hex_to_binary, print_array, decimal_to_binary, xor
-from key_generator import key_generation
+from utilities import permute, decimal_to_binary, xor
 
 S_BOXES = [
     # S1
@@ -79,10 +78,8 @@ P = [
 ]
 
 def function_F(expanded_bits, key_input):
-    # Apply the xor opperation for all the bits
+    # Apply the XOR operation for all the bits
     xor_result = xor(expanded_bits, key_input)
-    print(f"expanded bits: {expanded_bits},key input {key_input}")
-    print(f"XOR result: {xor_result}")
 
     # Divide the bits on 8 packets of 6 bits
     bits_divided_on_8_packets = []
@@ -91,16 +88,11 @@ def function_F(expanded_bits, key_input):
         temp_packet = xor_result[temp_size:temp_size+6]
         bits_divided_on_8_packets.append(temp_packet)
         temp_size += 6
-    print(f"tam de los paquetes {len(bits_divided_on_8_packets)}")
-    print(f"Primer paquete: {bits_divided_on_8_packets[0]}")
-    
+
     # For each packet, obtain their S-box representation
     s_boxes_representations = ""
-    for sbox_number, element in enumerate(bits_divided_on_8_packets) :
-        print(f"Packet {sbox_number}:")
-        print_array(element)
-        
-        # First extract the firts and last bit
+    for sbox_number, element in enumerate(bits_divided_on_8_packets):
+        # First extract the first and last bit
         first_bit = element[0]
         last_bit = element[-1]
 
@@ -115,25 +107,11 @@ def function_F(expanded_bits, key_input):
         representative_sbox_value = (S_BOXES[sbox_number]
                                      [sbox_row]
                                      [sbox_column])
-        
+
         byte_representative_sbox_value = decimal_to_binary(representative_sbox_value, 4)
-        print(f"(int) sBox value {representative_sbox_value}")
-        print(f"(byte) sBox value {byte_representative_sbox_value}")
-        # Now it's lenght is of 32 bits
+        # Now its length is 32 bits
         s_boxes_representations += byte_representative_sbox_value
 
     # Apply the permutation
-    print(s_boxes_representations)
     permutation = permute(s_boxes_representations, P)
     return permutation
-
-if __name__ == "__main__":
-    test_key_input = '133457799BBCDFF1'
-    test_input_bit = '13345779'
-    r0 = list("11110000101010101111000010101010")
-    key_binary = hex_to_binary(test_key_input)
-    input_binary = hex_to_binary(test_input_bit)
-    keys = key_generation(key_binary)
-    result = function_F(r0, keys[0])
-    print(result)
-    

@@ -1,13 +1,7 @@
 # This code contains the implementation of both normal key DES generation and
 # KE-DES key generation
 
-from utilities import (transform_64_binary_into_matrix_8x8, 
-                       hex_to_binary, 
-                       print_matrix,
-                       print_array, 
-                       transform_matrix_into_array, 
-                       left_shift_array,
-                       permute)
+from utilities import left_shift_array, permute
 
 PC_1 = [
     57, 49, 41, 33, 25, 17, 9,
@@ -59,26 +53,19 @@ def key_round(c0, d0, round_number):
     return pc2_permutation, c0, d0
 
 def key_generation(original_key):
-    # Applay transformation PC_1
+    # Apply transformation PC_1
     # Input: 64 bits, Output: 56 bits
-    print(original_key)
     pc_1 = permute(original_key, PC_1)
+    print("PC-1:", "".join(pc_1))
 
-    # DEBUG:
-    print("The PC1 transmutation: ")
-    print_array(pc_1)
-
-    # Divide each in half
-    c0 = pc_1[:28] 
+    # Divide each half
+    c0 = pc_1[:28]
     d0 = pc_1[28:]
 
-    print("C0: ")
-    print_array(c0)
+    print("C0:", "".join(c0))
+    print("D0:", "".join(d0))
 
-    print("D0: ")
-    print_array(d0)
-
-    #Obtain for each round, its key
+    # Obtain, for each round, its key
     keys = []
     for round in SHIFT_SCHEDULE:
         round_result, c0, d0 = key_round(c0, d0, round)
@@ -100,7 +87,7 @@ def ke_key_round(c0, d0, round_number):
 
     pc2_permutation = permute(combined, PC_2)
 
-    # Obtain the bits for k-D function from the pc2 permutation
+    # Obtain the bits for the K-D function from the pc2 permutation
     pc2_kd_selection = permute(pc2_permutation, PC2_KD_SELECTION)
 
     return pc2_permutation, pc2_kd_selection, c0, d0
@@ -120,14 +107,11 @@ def ke_des_generation(original_key):
     # First, extract the 8 bits used for the K-D function from the original key
     pc1_kd_selection = permute(original_key, PC1_KD_SELECTION)
 
-    # Applay transformation PC_1
+    # Apply transformation PC_1
     # Input: 64 bits, Output: 56 bits
-    print(original_key)
     pc_1 = permute(original_key, PC_1)
-
-    # DEBUG:
-    print("The PC1 transmutation: ")
-    print_array(pc_1)
+    print("PC-1:", "".join(pc_1))
+    print("PC1-KD:", "".join(pc1_kd_selection))
 
     input_56_bits = pc_1
 
@@ -138,7 +122,7 @@ def ke_des_generation(original_key):
     c0 = odd_even_result[:28]
     d0 = left_shift_array(odd_even_result[28:], 1)
 
-    #Obtain for each round, its key
+    # Obtain, for each round, its key
     keys = []
     pc2_kd_selections = []
     for round in SHIFT_SCHEDULE:
@@ -150,25 +134,3 @@ def ke_des_generation(original_key):
     assert all(len(key) == 48 for key in keys)
 
     return keys, pc1_kd_selection, pc2_kd_selections
-
-
-if __name__ == "__main__":
-    # Obtain the main data:
-    test_key_input = '133457799BBCDFF1'
-    binary_form = hex_to_binary(test_key_input)
-    print(f"Binary: {binary_form}")
-    original_key_matrix = transform_64_binary_into_matrix_8x8(binary_form)
-    print("Original key matrix")
-    print_matrix(original_key_matrix, "Original Key Matrix")
-
-    print("Doing key generation ....")
-    keys = key_generation(binary_form)
-    print("First key:")
-    print_array(keys[0])
-
-    print("Total keys:", len(keys))
-    print("K1:")
-    print_array(keys[0])
-
-    print("K16:")
-    print_array(keys[15])

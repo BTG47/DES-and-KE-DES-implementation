@@ -8,6 +8,7 @@ from key_generator import key_generation, ke_des_generation
 from des import des_process, k_des_process
 
 DEBUG = "--debug" in sys.argv
+DEMO = "--demo" in sys.argv
 
 DATASETS = [
     ("0123456789ABCDEF", "133457799BBCDFF1"),
@@ -78,27 +79,40 @@ def run_demo():
 
         with quiet():
             start = time.perf_counter()
-            keys, pc1, pc2 = ke_des_generation(key_bits)
-            elapsed_ms = (time.perf_counter() - start) * 1000
+            des_keys = key_generation(key_bits)
+            des_key_ms = (time.perf_counter() - start) * 1000
 
-            ciphertext = k_des_process(plaintext_bits, keys, pc1, pc2)
-            decrypted = k_des_process(
-                ciphertext, list(reversed(keys)), pc1, list(reversed(pc2))
+            start = time.perf_counter()
+            ke_keys, pc1, pc2 = ke_des_generation(key_bits)
+            ke_key_ms = (time.perf_counter() - start) * 1000
+
+            des_ciphertext = des_process(plaintext_bits, des_keys)
+            des_decrypted = des_process(
+                des_ciphertext, list(reversed(des_keys))
             )
 
-        decrypted_hex = bits_to_hex(decrypted)
-        status = "PASS" if decrypted_hex == plaintext else "FAIL"
+            ke_ciphertext = k_des_process(plaintext_bits, ke_keys, pc1, pc2)
+            ke_decrypted = k_des_process(
+                ke_ciphertext, list(reversed(ke_keys)), pc1, list(reversed(pc2))
+            )
 
-        print(f"Dataset {index}")
-        print(f"Plaintext: {plaintext}")
-        print(f"Key: {key}")
-        print(f"Ciphertext: {bits_to_hex(ciphertext)}")
-        print(f"Decrypted plaintext: {decrypted_hex}")
-        print(f"Key generation time (ms): {elapsed_ms:.4f}")
-        print(f"Roundtrip verification: {status}")
+        des_decrypted_hex = bits_to_hex(des_decrypted)
+        ke_decrypted_hex = bits_to_hex(ke_decrypted)
+        des_status = "PASS" if des_decrypted_hex == plaintext else "FAIL"
+        ke_status = "PASS" if ke_decrypted_hex == plaintext else "FAIL"
+
+        print(f"=== DATASET {index} ===")
+        print(f"Plaintext:  {plaintext}")
+        print(f"Key:        {key}")
+        print(f"DES    ct:  {bits_to_hex(des_ciphertext)}   -> {des_decrypted_hex}  [{des_status}]")
+        print(f"KE-DES ct:  {bits_to_hex(ke_ciphertext)}   -> {ke_decrypted_hex}  [{ke_status}]")
+        print(f"Key generation: DES {des_key_ms:.4f} ms | KE-DES {ke_key_ms:.4f} ms")
 
 
 def main():
+    if DEMO:
+        run_demo()
+        return
     while True:
         print(MENU)
         choice = input("> ").strip()

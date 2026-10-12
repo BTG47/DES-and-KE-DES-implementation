@@ -1,17 +1,4 @@
-# Code that will be used along the full developmente of the Key-DES
-# Some of this utilies includes: 
-
-def print_matrix(matrix, description):
-    print(f"Matrix: {description}")
-    for row in matrix:
-        for value in row:
-            print(value, end="")
-        print("")
-
-def print_array(array):
-    for element in array:
-        print(element, end="")
-    print("")
+# Shared helpers used across the DES and KE-DES implementation.
 
 def hex_to_decimal(hex):
     return int(hex, 16)
@@ -41,46 +28,24 @@ def binary_to_hex(binary):
         hexadecimal.append(format(int("".join(bits), 2), "X"))
     return hexadecimal
 
-def transform_64_binary_into_matrix_8x8(original_binary):
-    new_matrix = [[col for col in range(8)] for row in range (8)]
-    column = 0
-    row = 0
-    for element in original_binary:
-        if column == 8:
-            row += 1
-            column = 0
-        
-        new_matrix[row][column] = element
-        column += 1
-    return new_matrix
-
-def transform_matrix_into_array(matrix):
-    output_array = []
-    for row in matrix:
-        for value in row:
-            output_array.append(value)
-    return output_array
-
 def left_shift_array(array, num_of_times):
     return array[num_of_times:] + array[:num_of_times]
-
 
 def permute(bits, table):
     output = []
 
-    # Take the already made tables for DES and reorganize the bits according to
-    # those positions
+    # Reorganize the bits according to the positions in the given table
     for position in table:
-        output.append(bits[position -1])
+        output.append(bits[position - 1])
     return output
 
 def xor(bits1, bits2):
     result_xor = []
-    # Check that bots bits have the same lenght
+    # Both operands must have the same length
     if len(bits1) != len(bits2):
-        print(f"len bits 1: {len(bits1)}")
-        print(f"len bits 2: {len(bits2)}")
-        raise ValueError ("The bits have different sizes")
+        raise ValueError(
+            f"The bits have different sizes: {len(bits1)} and {len(bits2)}"
+        )
     for element in range(len(bits1)):
         xor = int(bits1[element]) ^ int(bits2[element])
         result_xor.append(str(xor))
