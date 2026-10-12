@@ -1,5 +1,5 @@
 from function_F import function_F
-from key_generator import key_generation
+from key_generator import key_generation, ke_des_generation
 from utilities import xor, permute, hex_to_binary, print_array, binary_to_hex
 INITIAL_PERMUTATION = [
     58, 50, 42, 34, 26, 18, 10, 2,
@@ -23,9 +23,28 @@ INVERSE_INITIAL_PERMUTATION = [
     33, 1, 41, 9, 49, 17, 57, 25
 ]
 
+EXPANSION_PERMUTATION = [
+    32, 1, 2, 3, 4, 5,
+    4, 5, 6, 7, 8, 9,
+    8, 9, 10, 11, 12, 13,
+    12, 13, 14, 15, 16, 17,
+    16, 17, 18, 19, 20, 21,
+    20, 21, 22, 23, 24, 25,
+    24, 25, 26, 27, 28, 29,
+    28, 29, 30, 31, 32, 1
+]
+
+def expansion_des(original_bit_array):
+    return permute(original_bit_array, EXPANSION_PERMUTATION)
+
+def expansion_kd(original_bit_array, pc1_kd_selection, pc2_kd_selection):
+    return pc1_kd_selection + original_bit_array + pc2_kd_selection
+
 def des_round(ln, rn, key):
+    # Apply the expansion of bits
+    expanded_rn = expansion_des(rn)
     #Apply the function
-    result_of_functionF= function_F(rn, key)
+    result_of_functionF= function_F(expanded_rn, key)
 
     # Apply XOR with ln
     xor_with_ln = xor(ln, result_of_functionF)
@@ -53,15 +72,9 @@ def des_process(data, keys):
     # Finally, the inverse permutation it's applied
     return permute(swap, INVERSE_INITIAL_PERMUTATION)
 
-if __name__ == "__main__":
-    text_input = "0123456789ABCDEF"
-    key = "133457799BBCDFF1"
-
-    binary_text = hex_to_binary(text_input)
-    binary_key = hex_to_binary(key)
-
+def full_des_algorithm(binary_text, key):
     # First: obtain the keys:
-    keys = key_generation(binary_key)
+    keys = key_generation(key)
     print(f"Total lenght of the keys: {len(keys)}")
 
     # Then, obtain the cipher text applying des
@@ -85,3 +98,68 @@ if __name__ == "__main__":
     print("Decrypted text:")
     print_array(hex_decrypted_text)
 
+def k_des_round(ln, rn, key, round, pc1_kd_selection, pc2_kd_selections):
+    # Apply the expansion of bits
+    expanded_rn = expansion_kd(rn,pc1_kd_selection, pc2_kd_selections[round])
+    #Apply the function
+    result_of_functionF= function_F(expanded_rn, key)
+
+    # Apply XOR with ln
+    xor_with_ln = xor(ln, result_of_functionF)
+
+    #Assing new values
+    ln = rn
+    rn = xor_with_ln
+    return ln, rn
+
+def k_des_process(data, keys, pc1_kd_selections, pc2_kd_selections):
+    # First, we apply the initial permutation
+    permuted_data = permute(data, INITIAL_PERMUTATION)
+
+    # Then, the data is split on two parts:
+    ln = permuted_data[:32]
+    rn = permuted_data[32:]
+
+    # For all keys, the round it's made (16 rounds)
+    for index, key in enumerate(keys):
+        ln, rn = k_des_round(ln, rn, key, index, pc1_kd_selections, pc2_kd_selections)
+
+    # The values are rearrenged as rn + ln
+    swap = rn + ln
+
+    # Finally, the inverse permutation it's applied
+    return permute(swap, INVERSE_INITIAL_PERMUTATION)
+
+def full_KE_des_algorithm(text_input, key):
+    # First, obtain the keys and the PC1 and PC2 selections
+    keys, pc1_selections, pc2_selections=ke_des_generation(key)
+
+    cipher_text = k_des_process(text_input, keys, pc1_selections, pc2_selections)
+
+    print("Ciphter text of KDES:")
+    print_array(binary_to_hex(cipher_text))
+
+    # Decryption process
+    decrypted_text = k_des_process(cipher_text, list(reversed(keys)), pc1_selections, list(reversed(pc2_selections)))
+
+    print("Desencrypted text:")
+    print_array(binary_to_hex(decrypted_text))
+
+if __name__ == "__main__":
+    text_input = "0123456789ABCDEF"
+    key = "133457799BBCDFF1"
+
+    binary_text = hex_to_binary(text_input)
+    binary_key = hex_to_binary(key)
+
+    full_KE_des_algorithm(binary_text, binary_key)
+
+    keys, pc1_bits, pc2_bits = ke_des_generation(binary_key)
+
+    print("KE-DES K1:")
+    print_array(keys[0])
+
+    print("KE-DES K2:")
+    print_array(keys[1])
+
+    

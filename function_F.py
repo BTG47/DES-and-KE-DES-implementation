@@ -1,17 +1,6 @@
 from utilities import permute, hex_to_binary, print_array, decimal_to_binary, xor
 from key_generator import key_generation
 
-EXPANSION_PERMUTATION = [
-    32, 1, 2, 3, 4, 5,
-    4, 5, 6, 7, 8, 9,
-    8, 9, 10, 11, 12, 13,
-    12, 13, 14, 15, 16, 17,
-    16, 17, 18, 19, 20, 21,
-    20, 21, 22, 23, 24, 25,
-    24, 25, 26, 27, 28, 29,
-    28, 29, 30, 31, 32, 1
-]
-
 S_BOXES = [
     # S1
     [
@@ -89,18 +78,12 @@ P = [
     22, 11, 4, 25
 ]
 
-def function_F(bits_input, key_input):
-    # Apply the expansion permutation form
-    print("Bits before: ")
-    print_array(bits_input)
-    expanded_bits = permute(bits_input, EXPANSION_PERMUTATION)
-    print("Bits after expansion: ")
-    print_array(expanded_bits)
-
-    # After having the expasion form, it's applied the xor opperation for all the bits
+def function_F(expanded_bits, key_input):
+    # Apply the xor opperation for all the bits
     xor_result = xor(expanded_bits, key_input)
     print(f"expanded bits: {expanded_bits},key input {key_input}")
     print(f"XOR result: {xor_result}")
+
     # Divide the bits on 8 packets of 6 bits
     bits_divided_on_8_packets = []
     temp_size = 0
@@ -116,13 +99,13 @@ def function_F(bits_input, key_input):
     for sbox_number, element in enumerate(bits_divided_on_8_packets) :
         print(f"Packet {sbox_number}:")
         print_array(element)
+        
         # First extract the firts and last bit
         first_bit = element[0]
         last_bit = element[-1]
-        # Obtain outer and inter bits
+
+        # Obtain outer and inner bits
         outer_bits = first_bit + last_bit
-        
-        # Then, obtain the inter bits
         inner_bits = ''.join(element[1:-1])
 
         # Look for it on it's s-box
@@ -153,4 +136,4 @@ if __name__ == "__main__":
     keys = key_generation(key_binary)
     result = function_F(r0, keys[0])
     print(result)
-    pass
+    

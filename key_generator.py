@@ -1,3 +1,6 @@
+# This code contains the implementation of both normal key DES generation and
+# KE-DES key generation
+
 from utilities import (transform_64_binary_into_matrix_8x8, 
                        hex_to_binary, 
                        print_matrix,
@@ -35,6 +38,16 @@ SHIFT_SCHEDULE = [
     2, 2, 2, 1
 ]
 
+PC1_KD_SELECTION = [
+    8, 16, 24, 32, 40, 48, 56, 64
+]
+
+PC2_KD_SELECTION = [
+    9, 18, 27, 36, 15, 22, 29, 4
+]
+
+
+# Original DES key generator
 def key_round(c0, d0, round_number):
     # apply left_schedule
     c0 = left_shift_array(c0, round_number)
@@ -75,6 +88,69 @@ def key_generation(original_key):
     assert all(len(key) == 48 for key in keys)
 
     return keys
+
+# KE-DES generation
+
+def ke_key_round(input_56_bits, round_number):
+
+    #Applay Odd_Even
+    odd_even_result = odd_even_transformation(input_56_bits)
+    
+    # Divide each in half
+    c0 = odd_even_result[:28]
+    d0 = odd_even_result[28:]
+    # apply left_schedule
+    c0 = left_shift_array(c0, round_number)
+    d0 = left_shift_array(d0, round_number)
+
+    combined = c0 + d0
+
+    pc2_permutation = permute(combined, PC_2)
+
+    # Obtain the bits for k-D funciont from the pc2 permutation
+    pc2_kd_selection = permute(pc2_permutation, PC2_KD_SELECTION)
+
+    return pc2_permutation, pc2_kd_selection, combined
+
+def odd_even_transformation(input_array):
+    result_array = []
+
+    for position in range(1, len(input_array) + 1):
+        if position % 2 == 0:
+            result_array.append('1')
+        else:
+            result_array.append('0')
+
+    return result_array
+
+def ke_des_generation(original_key):
+    # First, extract the 8 bits used for the K-D function from the original key
+    pc1_kd_selection = permute(original_key, PC1_KD_SELECTION)
+
+    # Applay transformation PC_1
+    # Input: 64 bits, Output: 56 bits
+    print(original_key)
+    pc_1 = permute(original_key, PC_1)
+
+    # DEBUG:
+    print("The PC1 transmutation: ")
+    print_array(pc_1)
+
+    input_56_bits = pc_1
+    
+    #Obtain for each round, its key
+    keys = []
+    pc2_kd_selections = []
+    for round in SHIFT_SCHEDULE:
+        round_result, pc2_kd_selection, input_56_bits = ke_key_round(input_56_bits, round)
+        keys.append(round_result)
+        pc2_kd_selections.append(pc2_kd_selection)
+
+    assert len(keys) == 16
+    assert all(len(key) == 48 for key in keys)
+
+    return keys, pc1_kd_selection, pc2_kd_selections
+
 
 if __name__ == "__main__":
     # Obtain the main data:
